@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaRun - charity: water Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .game-container {
+            width: min(400px, 95vw);
+            height: min(700px, 95vh);
+            background: linear-gradient(180deg, #87CEEB 0%, #F4A460 100%);
+            border: 3px solid #004B87;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, #00A8E6, #004B87);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-bottom: 2px solid #004B87;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .jerry-can {
+            width: 24px;
+            height: 24px;
+            background: #FFD700;
+            border-radius: 3px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .jerry-can::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #004B87;
+        }
+
+        .game-area {
+            position: relative;
+            height: 280px;
+            background: linear-gradient(180deg, #87CEEB 0%, #F4A460 100%);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(180deg, #D2691E 0%, #8B4513 100%);
+            border-top: 3px solid #654321;
+        }
+
+        .runner {
+            position: absolute;
+            bottom: 60px;
+            left: 50px;
+            width: 40px;
+            height: 40px;
+            background: #FF6B6B;
+            border-radius: 50%;
+            transition: bottom 0.3s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .runner.jumping {
+            bottom: 160px;
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 60px;
+            right: -40px;
+            width: 30px;
+            height: 40px;
+            background: #8B4513;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 5;
+        }
+
+        .obstacle:hover {
+            transform: scale(1.1);
+        }
+
+        .water-drop {
+            position: absolute;
+            bottom: 140px;
+            right: -25px;
+            width: 20px;
+            height: 25px;
+            background: #00BFFF;
+            border-radius: 50% 50% 50% 0;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+        }
+
+        .water-drop:hover {
+            transform: scale(1.2);
+        }
+
+        .water-drop::before {
+            content: '💧';
+            font-size: 0.8em;
+        }
+
+        .jerry-can-collectible {
+            position: absolute;
+            bottom: 180px;
+            right: -30px;
+            width: 25px;
+            height: 30px;
+            background: #FFD700;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+
+        .jerry-can-collectible:hover {
+            transform: scale(1.2);
+        }
+
+        .jerry-can-collectible::before {
+            content: '🪣';
+        }
+
+        .score-popup {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.2em;
+            pointer-events: none;
+            z-index: 50;
+            animation: scorePopup 1s ease-out forwards;
+        }
+
+        @keyframes scorePopup {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .jump-btn {
+            background: linear-gradient(135deg, #28A745, #20C997);
+            color: white;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #00A8E6, #004B87);
+            color: white;
+        }
+
+        .shop-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #DC3545, #C82333);
+            color: white;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .game-over h2 {
+            color: #FF6B6B;
+            margin-bottom: 15px;
+        }
+
+        .game-over p {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #28A745, #20C997);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .victory-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #28A745, #20C997);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .victory-screen h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .campus-rewards {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            z-index: 200;
+            display: none;
+            overflow-y: auto;
+        }
+
+        .rewards-header {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .reward-item {
+            background: linear-gradient(135deg, #00A8E6, #004B87);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reward-item.affordable {
+            background: linear-gradient(135deg, #28A745, #20C997);
+            cursor: pointer;
+        }
+
+        .reward-item.affordable:hover {
+            transform: scale(1.02);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .educational-fact {
+            background: rgba(0, 168, 230, 0.2);
+            border-left: 4px solid #00A8E6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #004B87;
+        }
+
+        .impact-tracker {
+            background: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid #28A745;
+            padding: 8px;
+            margin: 0;
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: #1e7e34;
+            flex-shrink: 0;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #00A8E6, #004B87);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 150;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .start-screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-screen p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+
+        .start-screen .btn {
+            background: linear-gradient(135deg, #28A745, #20C997);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            min-width: 200px;
+            margin: 10px;
+            border-radius: 25px;
+        }
+
+        .start-screen .controls-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .start-screen .controls-info h3 {
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .accessibility-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.8em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            animation: confetti-fall 3s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .confetti:nth-child(2n) { background: #FF6B6B; animation-delay: 0.5s; }
+        .confetti:nth-child(3n) { background: #28A745; animation-delay: 1s; }
+        .confetti:nth-child(4n) { background: #00A8E6; animation-delay: 1.5s; }
+
+        @media (max-width: 450px) {
+            .game-container {
+                width: 95vw;
+                height: 95vh;
+                border-radius: 15px;
+            }
+            
+            .btn {
+                font-size: 0.8em;
+                padding: 10px 6px;
+            }
+            
+            .start-screen h1 {
+                font-size: 2em;
+            }
+            
+            .start-screen p {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .game-area {
+                height: 200px;
+            }
+            
+            .educational-fact,
+            .impact-tracker {
+                font-size: 0.7em;
+                padding: 6px;
+            }
+            
+            .controls {
+                padding: 10px;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="start-screen" id="startScreen">
+            <h1>🏃‍♂️ AquaRun</h1>
+            <p>Help charity: water bring clean water to communities in need! Collect water drops and Jerry Cans, avoid obstacles, and earn campus rewards.</p>
+            <button class="btn" id="playBtn">🎮 Start Playing</button>
+            <div class="controls-info">
+                <h3>How to Play:</h3>
+                <p>• Jump over obstacles to keep running<br>
+                • Move left/right to dodge obstacles<br>
+                • Collect water drops for +10 points<br>
+                • Collect Jerry Cans for +25 points<br>
+                • Clicking obstacles costs -15 points<br>
+                • Reach 500 points to win!</p>
+            </div>
+            <div class="accessibility-info">
+                <strong>Controls:</strong> Arrow Keys (↑ jump, ← → move), Space (jump), or tap/click buttons. Touch items to collect points!
+            </div>
+        </div>
+        
+        <div class="game-header">
+            <div class="jerry-can"></div>
+            <span>AquaRun - charity: water</span>
+        </div>
+        
+        <div class="game-stats">
+            <div>Score: <span id="score">0</span></div>
+            <div>Distance: <span id="distance">0</span>m</div>
+            <div>Campus Points: <span id="campusPoints">0</span></div>
+        </div>
+        
+        <div class="game-area" id="gameArea">
+            <div class="ground"></div>
+            <div class="runner" id="runner">🏃</div>
+        </div>
+        
+        <div class="educational-fact">
+            <strong>Did you know?</strong> 785 million people lack access to clean water. Every drop you collect helps charity: water build wells!
+        </div>
+        
+        <div class="controls">
+            <div class="control-buttons">
+                <button class="btn jump-btn" id="jumpBtn" aria-label="Jump over obstacles">🦘 Jump</button>
+                <button class="btn start-btn" id="startBtn">▶️ Start Game</button>
+                <button class="btn shop-btn" id="shopBtn" aria-label="Open campus rewards store">🏪 Rewards</button>
+                <button class="btn reset-btn" id="resetBtn" aria-label="Reset game">🔄 Reset</button>
+            </div>
+            <div class="impact-tracker">
+                <strong>Your Impact:</strong> You've helped provide <span id="impactWater">0</span> days of clean water to families in need!
+            </div>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Final Distance: <span id="finalDistance">0</span>m</p>
+            <p>Campus Points Earned: <span id="finalCampusPoints">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Try Again</button>
+        </div>
+
+        <div class="victory-screen" id="victoryScreen">
+            <h2>🎉 Victory! 🎉</h2>
+            <p>Congratulations! You've reached 500 points!</p>
+            <p>Final Score: <span id="victoryScore">0</span></p>
+            <p>You've made a real difference for communities in need!</p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+        
+        <div class="campus-rewards" id="campusRewards">
+            <button class="close-btn" onclick="closeCampusRewards()">×</button>
+            <div class="rewards-header">
+                Campus Rewards Store
+            </div>
+            <div class="reward-item" id="reward1">
+                <div>
+                    <strong>Cafeteria 15% Discount</strong><br>
+                    <small>Save money on your next meal!</small>
+                </div>
+                <div>200 pts</div>
+            </div>
+            <div class="reward-item" id="reward2">
+                <div>
+                    <strong>Coffee Shop Free Drink</strong><br>
+                    <small>Any size, any drink</small>
+                </div>
+                <div>300 pts</div>
+            </div>
+            <div class="reward-item" id="reward3">
+                <div>
+                    <strong>Library Priority Booking</strong><br>
+                    <small>Skip the reservation wait</small>
+                </div>
+                <div>500 pts</div>
+            </div>
+            <div class="reward-item" id="reward4">
+                <div>
+                    <strong>Gym Day Pass</strong><br>
+                    <small>Full access to fitness center</small>
+                </div>
+                <div>750 pts</div>
+            </div>
+            <div class="reward-item" id="reward5">
+                <div>
+                    <strong>Parking Permit (1 Day)</strong><br>
+                    <small>Premium parking spot</small>
+                </div>
+                <div>400 pts</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let gameState = 'menu';
+        let score = 0;
+        let distance = 0;
+        let campusPoints = 0;
+        let gameSpeed = 1;
+        let isJumping = false;
+        let gameLoop = null;
+        let spawnLoop = null;
+        let winThreshold = 500;
+        let gameElements = [];
+        let runnerPosition = 50; // Starting position from left
+
+        // DOM elements
+        const runner = document.getElementById('runner');
+        const gameArea = document.getElementById('gameArea');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
+        const victoryScreen = document.getElementById('victoryScreen');
+
+        // Educational facts
+        const educationalFacts = [
+            "785 million people lack access to clean water worldwide.",
+            "Every $40 donated to charity: water can provide clean water to one person for life.",
+            "Women and children walk miles every day to collect water that's often contaminated.",
+            "charity: water has funded over 91,000 water projects in 29 countries.",
+            "Access to clean water reduces child mortality by up to 50%.",
+            "Clean water access increases girls' school attendance by 15%.",
+            "The Jerry Can is used globally to collect water - that's why it's our symbol!"
+        ];
+        let currentFactIndex = 0;
+
+        // Initialize game
+        function initGame() {
+            document.getElementById('playBtn').addEventListener('click', showGameScreen);
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('jumpBtn').addEventListener('click', jump);
+            document.getElementById('shopBtn').addEventListener('click', showCampusRewards);
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Touch controls
+            gameArea.addEventListener('touchstart', handleTouch);
+            
+            updateUI();
+            rotateEducationalFacts();
+        }
+
+        function handleKeyPress(e) {
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && gameState === 'playing') {
+                e.preventDefault();
+                jump();
+            } else if (e.code === 'ArrowLeft' && gameState === 'playing') {
+                e.preventDefault();
+                moveRunner('left');
+            } else if (e.code === 'ArrowRight' && gameState === 'playing') {
+                e.preventDefault();
+                moveRunner('right');
+            } else if (e.code === 'Enter' && gameState === 'menu') {
+                if (startScreen.style.display !== 'none') {
+                    showGameScreen();
+                } else {
+                    startGame();
+                }
+            }
+        }
+
+        function handleTouch(e) {
+            if (gameState === 'playing') {
+                e.preventDefault();
+                jump();
+            }
+        }
+
+        function showGameScreen() {
+            startScreen.style.display = 'none';
+            document.getElementById('startBtn').focus();
+        }
+
+        function startGame() {
+            if (gameState !== 'menu') return;
+            
+            gameState = 'playing';
+            score = 0;
+            distance = 0;
+            campusPoints = 0;
+            gameSpeed = 1;
+            gameElements = [];
+            
+            document.getElementById('startBtn').textContent = 'Playing...';
+            document.getElementById('startBtn').disabled = true;
+            gameOverScreen.style.display = 'none';
+            victoryScreen.style.display = 'none';
+            
+            gameLoop = setInterval(updateGame, 50);
+            spawnLoop = setInterval(spawnElements, 1000);
+        }
+
+        function updateGame() {
+            if (gameState !== 'playing') return;
+            
+            distance += gameSpeed;
+            gameSpeed = Math.min(gameSpeed + 0.001, 2);
+            
+            updateElements();
+            checkCollisions();
+            updateUI();
+            
+            // Campus points based on distance
+            if (distance % 100 === 0) {
+                campusPoints += Math.floor(distance / 100);
+            }
+
+            // Check win condition
+            if (score >= winThreshold) {
+                victory();
+            }
+        }
+
+        function jump() {
+            if (isJumping || gameState !== 'playing') return;
+            
+            isJumping = true;
+            runner.classList.add('jumping');
+            
+            setTimeout(() => {
+                runner.classList.remove('jumping');
+                isJumping = false;
+            }, 600);
+        }
+
+        function moveRunner(direction) {
+            if (gameState !== 'playing') return;
+            
+            if (direction === 'left') {
+                runnerPosition = Math.max(10, runnerPosition - 15);
+            } else if (direction === 'right') {
+                runnerPosition = Math.min(350, runnerPosition + 15);
+            }
+            
+            runner.style.left = runnerPosition + 'px';
+        }
+
+        function spawnElements() {
+            if (gameState !== 'playing') return;
+            
+            const rand = Math.random();
+            if (rand < 0.4) {
+                spawnObstacle();
+            } else if (rand < 0.7) {
+                spawnWaterDrop();
+            } else {
+                spawnJerryCan();
+            }
+        }
+
+        function spawnObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.className = 'obstacle';
+            obstacle.style.right = '-40px';
+            obstacle.addEventListener('click', () => handleObstacleClick(obstacle));
+            gameArea.appendChild(obstacle);
+            
+            gameElements.push({
+                element: obstacle,
+                type: 'obstacle',
+                x: 400,
+                clicked: false
+            });
+        }
+
+        function spawnWaterDrop() {
+            const waterDrop = document.createElement('div');
+            waterDrop.className = 'water-drop';
+            waterDrop.style.right = '-25px';
+            waterDrop.addEventListener('click', () => handleWaterDropClick(waterDrop));
+            gameArea.appendChild(waterDrop);
+            
+            gameElements.push({
+                element: waterDrop,
+                type: 'waterdrop',
+                x: 400,
+                collected: false
+            });
+        }
+
+        function spawnJerryCan() {
+            const jerryCan = document.createElement('div');
+            jerryCan.className = 'jerry-can-collectible';
+            jerryCan.style.right = '-30px';
+            jerryCan.addEventListener('click', () => handleJerryCanClick(jerryCan));
+            gameArea.appendChild(jerryCan);
+            
+            gameElements.push({
+                element: jerryCan,
+                type: 'jerrycan',
+                x: 400,
+                collected: false
+            });
+        }
+
+        function handleWaterDropClick(waterDrop) {
+            if (gameState !== 'playing') return;
+            
+            score += 10;
+            campusPoints += 1;
+            showScorePopup(waterDrop, '+10', '#00BFFF');
+            
+            waterDrop.style.display = 'none';
+            
+            const item = gameElements.find(item => item.element === waterDrop);
+            if (item) item.collected = true;
+        }
+
+        function handleJerryCanClick(jerryCan) {
+            if (gameState !== 'playing') return;
+            
+            score += 25;
+            campusPoints += 3;
+            showScorePopup(jerryCan, '+25', '#FFD700');
+            
+            jerryCan.style.display = 'none';
+            
+            const item = gameElements.find(item => item.element === jerryCan);
+            if (item) item.collected = true;
+        }
+
+        function handleObstacleClick(obstacle) {
+            if (gameState !== 'playing') return;
+            
+            score = Math.max(0, score - 15);
+            showScorePopup(obstacle, '-15', '#FF6B6B');
+            
+            obstacle.style.backgroundColor = '#FF6B6B';
+            obstacle.style.transform = 'scale(1.2)';
+            
+            const item = gameElements.find(item => item.element === obstacle);
+            if (item) item.clicked = true;
+        }
+
+        function showScorePopup(element, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.color = color;
+            popup.style.left = element.offsetLeft + 'px';
+            popup.style.top = element.offsetTop + 'px';
+            
+            gameArea.appendChild(popup);
+            
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                }
+            }, 1000);
+        }
+
+        function updateElements() {
+            gameElements = gameElements.filter(item => {
+                item.x -= gameSpeed * 4;
+                item.element.style.right = (400 - item.x) + 'px';
+                
+                if (item.x < -50) {
+                    if (item.element.parentNode) {
+                        item.element.parentNode.removeChild(item.element);
+                    }
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function checkCollisions() {
+            const runnerRect = runner.getBoundingClientRect();
+            
+            for (let item of gameElements) {
+                if (item.type === 'obstacle' && !item.clicked) {
+                    const itemRect = item.element.getBoundingClientRect();
+                    if (isColliding(runnerRect, itemRect)) {
+                        gameOver();
+                        return;
+                    }
+                } else if (item.type === 'waterdrop' && !item.collected) {
+                    const itemRect = item.element.getBoundingClientRect();
+                    if (isColliding(runnerRect, itemRect)) {
+                        // Auto-collect water drop
+                        score += 10;
+                        campusPoints += 1;
+                        showScorePopup(item.element, '+10', '#00BFFF');
+                        item.element.style.display = 'none';
+                        item.collected = true;
+                    }
+                } else if (item.type === 'jerrycan' && !item.collected) {
+                    const itemRect = item.element.getBoundingClientRect();
+                    if (isColliding(runnerRect, itemRect)) {
+                        // Auto-collect jerry can
+                        score += 25;
+                        campusPoints += 3;
+                        showScorePopup(item.element, '+25', '#FFD700');
+                        item.element.style.display = 'none';
+                        item.collected = true;
+                    }
+                }
+            }
+        }
+
+        function isColliding(rect1, rect2) {
+            return rect1.left < rect2.right &&
+                   rect1.right > rect2.left &&
+                   rect1.top < rect2.bottom &&
+                   rect1.bottom > rect2.top;
+        }
+
+        function gameOver() {
+            gameState = 'gameOver';
+            
+            clearInterval(gameLoop);
+            clearInterval(spawnLoop);
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalDistance').textContent = Math.floor(distance);
+            document.getElementById('finalCampusPoints').textContent = campusPoints;
+            gameOverScreen.style.display = 'block';
+            
+            cleanupGameElements();
+        }
+
+        function victory() {
+            gameState = 'victory';
+            
+            clearInterval(gameLoop);
+            clearInterval(spawnLoop);
+            
+            document.getElementById('victoryScore').textContent = score;
+            victoryScreen.style.display = 'block';
+            
+            createConfetti();
+            cleanupGameElements();
+        }
+
+        function createConfetti() {
+            const colors = ['#FFD700', '#FF6B6B', '#28A745', '#00A8E6', '#FFA500'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    gameArea.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        if (confetti.parentNode) {
+                            confetti.parentNode.removeChild(confetti);
+                        }
+                    }, 4000);
+                }, i * 100);
+            }
+        }
+
+        function cleanupGameElements() {
+            gameElements.forEach(item => {
+                if (item.element.parentNode) {
+                    item.element.parentNode.removeChild(item.element);
+                }
+            });
+            gameElements = [];
+        }
+
+        function resetGame() {
+            clearInterval(gameLoop);
+            clearInterval(spawnLoop);
+            
+            gameState = 'menu';
+            score = 0;
+            distance = 0;
+            campusPoints = 0;
+            gameSpeed = 1;
+            isJumping = false;
+            runnerPosition = 50;
+            
+            cleanupGameElements();
+            
+            document.getElementById('startBtn').textContent = '▶️ Start Game';
+            document.getElementById('startBtn').disabled = false;
+            gameOverScreen.style.display = 'none';
+            victoryScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            runner.classList.remove('jumping');
+            runner.style.left = runnerPosition + 'px';
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('distance').textContent = Math.floor(distance);
+            document.getElementById('campusPoints').textContent = campusPoints;
+            document.getElementById('impactWater').textContent = Math.floor(score / 50);
+            
+            updateRewardAffordability();
+        }
+
+        function updateRewardAffordability() {
+            const rewards = [
+                { id: 'reward1', cost: 200 },
+                { id: 'reward2', cost: 300 },
+                { id: 'reward3', cost: 500 },
+                { id: 'reward4', cost: 750 },
+                { id: 'reward5', cost: 400 }
+            ];
+            
+            rewards.forEach(reward => {
+                const element = document.getElementById(reward.id);
+                if (campusPoints >= reward.cost) {
+                    element.classList.add('affordable');
+                    element.onclick = () => purchaseReward(reward.cost, reward.id);
+                } else {
+                    element.classList.remove('affordable');
+                    element.onclick = null;
+                }
+            });
+        }
+
+        function purchaseReward(cost, rewardId) {
+            if (campusPoints >= cost) {
+                campusPoints -= cost;
+                updateUI();
+                alert('Reward purchased! Check your student portal for redemption details.');
+                document.getElementById(rewardId).style.opacity = '0.5';
+                document.getElementById(rewardId).onclick = null;
+            }
+        }
+
+        function showCampusRewards() {
+            document.getElementById('campusRewards').style.display = 'block';
+            updateRewardAffordability();
+        }
+
+        function closeCampusRewards() {
+            document.getElementById('campusRewards').style.display = 'none';
+        }
+
+        function restartGame() {
+            resetGame();
+        }
+
+        function rotateEducationalFacts() {
+            setInterval(() => {
+                currentFactIndex = (currentFactIndex + 1) % educationalFacts.length;
+                document.querySelector('.educational-fact').innerHTML = 
+                    `<strong>Did you know?</strong> ${educationalFacts[currentFactIndex]}`;
+            }, 8000);
+        }
+
+        // Initialize the game when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
